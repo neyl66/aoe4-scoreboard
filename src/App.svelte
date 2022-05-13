@@ -1,16 +1,16 @@
 <script>
     import {onMount} from "svelte";
-	import {played_matches} from "./stores.js";
+	import {played_matches, wins, losses} from "./stores.js";
 
-    const matches_url = (profile_id) => `https://aoe4world.com/api/v0/players/${profile_id}/games`;
+    const matches_url = (profile_id, since) => `https://aoe4world.com/api/v0/players/${profile_id}/games?since=${since}`;
 
 	let settings = {
 		steam_id: "",
+		since: "",
 		civs: [],
-		map_types: [],
         periodic_check: {
             timer: 0,
-            interval: 20 * 1000,
+            interval: 10 * 1000,
         },
 	};
 
@@ -29,31 +29,48 @@
 		}
 	}
 
-    async function set_played_matches() {
-        const saved_played_matches = $played_matches;
-        const awaited_played_matches = await get_played_matches();
+	async function set_score() {
+		await set_played_matches();
+		console.log($played_matches)
 
-        const changes = diff(saved_played_matches, awaited_played_matches);
-        if (changes.length > 0) {
-            $played_matches = awaited_played_matches;
-        }
+
+		$played_matches.forEach((match) => {
+			const {ongoing, teams, started_at, updated_at} = match;
+
+			teams.forEach((team) => {
+				team.forEach(({player}) => {
+					const {profile_id, name, result} = player;
+					
+					if (name === "Offico") {
+						if (result === "win") {
+							$wins += 1;
+						} else {
+							$losses += 1;
+						}
+					}
+				});
+			});
+		});
+	}
+
+    async function set_played_matches() {
+		$played_matches = await get_played_matches();
     }
 
+
     async function get_played_matches() {
-        const response = await fetch(match_url(settings.steam_id));
+        const response = await fetch(matches_url(settings.steam_id, settings.since));
         const json = await response.json();
 
-        return json;
+        return json.games;
     }
 
 	function start_periodic_check() {
-		if (settings.periodic_check.timer) {
-			return;
-		}
+		if (settings.periodic_check.timer) return;
 
 		// Refresh data on interval.
 		settings.periodic_check.timer = setInterval(() => {
-			set_played_matches();
+			set_score();
 		}, settings.periodic_check.interval);
 	}
 
@@ -63,10 +80,13 @@
 	}
 
     onMount(async () => {
-		return
-		get_url_info();
+		const date = new Date();
+		date.setHours(date.getHours() - 16);
+		settings.since = date.toISOString();
 
-        set_played_matches();
+		get_url_info();
+		
+		set_score();
 		start_periodic_check();
 	});
 
@@ -78,7 +98,7 @@
 		vs
 		<span>Ladder</span>
 
-		6:4
+		{$wins}:{$losses}
 	</div>
 </main>
 
