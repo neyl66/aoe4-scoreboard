@@ -33,8 +33,8 @@
 		$played_matches = [];
 		await set_played_matches();
 		console.log($played_matches)
-		$wins += 0;
-		$losses += 0;
+		$wins = 0;
+		$losses = 0;
 
 
 		$played_matches.forEach((match) => {
@@ -107,6 +107,6 @@
 
 <style>
 	.scoreboard {
-		font-size: 32px;
+		font-size: 28px;
 	}
 </style>
