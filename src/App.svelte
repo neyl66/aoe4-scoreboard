@@ -1,16 +1,18 @@
 <script>
     import {onMount} from "svelte";
-	import {played_matches, wins, losses} from "./stores.js";
+	import {played_matches, player_name, wins, losses} from "./stores.js";
 
+    const player_url = (profile_id) => `https://aoe4world.com/api/v0/players/${profile_id}`;
     const matches_url = (profile_id, since) => `https://aoe4world.com/api/v0/players/${profile_id}/games?since=${since}`;
 
 	let settings = {
 		steam_id: "",
+		profile_id: "",
 		since: "",
 		civs: [],
         periodic_check: {
             timer: 0,
-            interval: 10 * 1000,
+            interval: 20 * 1000,
         },
 	};
 
@@ -19,7 +21,7 @@
 		const search_params = new URLSearchParams(current_url.search);
 
 		// Available url parameters to override settings.
-		const params = ["steam_id"];
+		const params = ["steam_id", "profile_id"];
 
 		// Apply found url params to settings.
 		for (let param of params) {
@@ -29,10 +31,17 @@
 		}
 	}
 
+	async function get_player_info() {
+		const response = await fetch(player_url(settings.steam_id));
+		const json = await response.json();
+
+		settings.profile_id = json.profile_id;
+		$player_name = json.name;
+	}
+
 	async function set_score() {
 		$played_matches = [];
 		await set_played_matches();
-		console.log($played_matches)
 		$wins = 0;
 		$losses = 0;
 
@@ -40,16 +49,21 @@
 		$played_matches.forEach((match) => {
 			const {ongoing, teams, started_at, updated_at} = match;
 
+			// Skip game that has not yet ended.
+			if (ongoing) return;
+
 			teams.forEach((team) => {
 				team.forEach(({player}) => {
 					const {profile_id, name, result} = player;
 					
-					if (name === "Offico") {
-						if (result === "win") {
-							$wins += 1;
-						} else {
-							$losses += 1;
-						}
+					if (profile_id !== settings.profile_id) {
+						return;
+					}
+
+					if (result === "win") {
+						$wins += 1;
+					} else if (result === "loss") {
+						$losses += 1;
 					}
 				});
 			});
@@ -88,6 +102,11 @@
 		settings.since = date.toISOString();
 
 		get_url_info();
+
+		// Get more info using steam id
+		if (settings.steam_id && !settings.profile_id) {
+			await get_player_info();
+		}
 		
 		set_score();
 		start_periodic_check();
@@ -97,7 +116,7 @@
 
 <main>
 	<div class="scoreboard">
-		<span>Offico</span>
+		<span>{$player_name}</span>
 		vs
 		<span>Ladder</span>
 
