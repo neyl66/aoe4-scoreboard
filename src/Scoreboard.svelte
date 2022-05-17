@@ -10,6 +10,12 @@
 		steam_id: "",
 		profile_id: "",
 		since: "",
+        enemy: {
+            profile_id: "",
+            name: "",
+            wins_against: 0,
+            losses_against: 0,
+        },
 		civs: [],
         periodic_check: {
             timer: 0,
@@ -79,6 +85,51 @@
 
     async function set_played_matches() {
 		$played_matches = await get_played_matches();
+
+        settings.enemy.profile_id = "";
+        settings.enemy.name = "";
+        settings.enemy.wins_against = 0;
+        settings.enemy.losses_against = 0;
+
+        if ($played_matches.length > 0) {
+            for (const team of $played_matches[0].teams) {
+                for (const {player} of team) {
+                    if (player.profile_id !== settings.profile_id) {
+                        settings.enemy.profile_id = player.profile_id;
+                        settings.enemy.name = player.name;
+                        break;
+                    }
+                }
+            }
+            
+            if (settings.enemy.profile_id) {
+                const response = await fetch(matches_against_enemy_url(settings.profile_id, settings.enemy.profile_id))
+                const json = await response.json();
+
+                json.games.forEach((match) => {
+                    const {ongoing, teams, started_at, updated_at} = match;
+
+                    // Skip game that has not yet ended.
+                    if (ongoing) return;
+
+                    teams.forEach((team) => {
+                        team.forEach(({player}) => {
+                            const {profile_id, name, result} = player;
+                            
+                            if (profile_id !== settings.profile_id) {
+                                return;
+                            }
+
+                            if (result === "win") {
+                                settings.enemy.wins_against += 1;
+                            } else if (result === "loss") {
+                                settings.enemy.losses_against += 1;
+                            }
+                        });
+                    });
+                });
+            }
+        }
     }
 
 
@@ -122,11 +173,23 @@
 
 <main>
 	<div class="scoreboard">
-		<span>{$player_name}</span>
-		vs
-		<span>Ladder</span>
+        {#if settings.enemy.profile_id}
+            <div class="scoreboard-item">
+                <span>{$player_name}</span>
+                vs
+                <span>{settings.enemy.name}</span>
 
-		{$wins}:{$losses}
+                {settings.enemy.wins_against}:{settings.enemy.losses_against}
+            </div>
+        {/if}
+
+        <div class="scoreboard-item">
+            <span>{$player_name}</span>
+            vs
+            <span>Ladder</span>
+    
+            {$wins}:{$losses}
+        </div>
 	</div>
 </main>
 
@@ -135,4 +198,8 @@
 		font-size: 28px;
         text-shadow: black 0px 0px 3px;
 	}
+
+    .scoreboard-item {
+        margin-bottom: 5px;
+    }
 </style>
