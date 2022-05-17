@@ -179,7 +179,9 @@
                 vs
                 <span>{settings.enemy.name}</span>
 
-                {settings.enemy.wins_against}:{settings.enemy.losses_against}
+                <span class="win">{settings.enemy.wins_against}</span>
+                :
+                <span class="loss">{settings.enemy.losses_against}</span>
             </div>
         {/if}
 
@@ -188,7 +190,9 @@
             vs
             <span>Ladder</span>
     
-            {$wins}:{$losses}
+            <span class="win">{$wins}</span>
+            :
+            <span class="loss">{$losses}</span>
         </div>
 	</div>
 </main>
@@ -204,5 +208,13 @@
     }
     .scoreboard-item.-enemy {
         font-size: 22px;
+    }
+
+    .win {
+        color: rgb(34 197 94);
+    }
+
+    .loss {
+        color: rgb(239 68 68);
     }
 </style>
