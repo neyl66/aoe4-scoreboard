@@ -133,5 +133,6 @@
 <style>
 	.scoreboard {
 		font-size: 28px;
+        text-shadow: black 0px 0px 3px;
 	}
 </style>
