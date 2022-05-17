@@ -174,7 +174,7 @@
 <main>
 	<div class="scoreboard">
         {#if settings.enemy.profile_id}
-            <div class="scoreboard-item">
+            <div class="scoreboard-item -enemy">
                 <span>{$player_name}</span>
                 vs
                 <span>{settings.enemy.name}</span>
@@ -201,5 +201,8 @@
 
     .scoreboard-item {
         margin-bottom: 5px;
+    }
+    .scoreboard-item.-enemy {
+        font-size: 22px;
     }
 </style>
