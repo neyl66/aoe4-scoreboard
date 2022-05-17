@@ -88,8 +88,6 @@
 
         settings.enemy.profile_id = "";
         settings.enemy.name = "";
-        settings.enemy.wins_against = 0;
-        settings.enemy.losses_against = 0;
 
         if ($played_matches.length > 0) {
             for (const team of $played_matches[0].teams) {
@@ -105,6 +103,8 @@
             if (settings.enemy.profile_id) {
                 const response = await fetch(matches_against_enemy_url(settings.profile_id, settings.enemy.profile_id))
                 const json = await response.json();
+                settings.enemy.wins_against = 0;
+                settings.enemy.losses_against = 0;
 
                 json.games.forEach((match) => {
                     const {ongoing, teams, started_at, updated_at} = match;
@@ -128,6 +128,9 @@
                         });
                     });
                 });
+            } else {
+                settings.enemy.wins_against = 0;
+                settings.enemy.losses_against = 0;
             }
         }
     }
